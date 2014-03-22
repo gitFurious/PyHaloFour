@@ -2,7 +2,6 @@ __author__ = 'Damon Pollard (@DamonLPollard)'
 
 import re
 import random
-import json
 
 import requests
 
@@ -21,6 +20,10 @@ R_URLPOST = "urlPost:'(.+?)'"
 
 
 class HaloFour():
+    """ Class for retrieving a Halo Waypoint Token (required to authenticate with the Halo Waypoint API)
+        allow_redirects is False where applicable in order to not disguise Location Header redirects.
+    """
+
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -35,26 +38,26 @@ class HaloFour():
                              },
                              allow_redirects=False
         )
-        login_live_com = response_one.headers['Location']
+        oauth20_authorize = response_one.headers['Location']
 
-        response_two = s.get(login_live_com,
+        response_two = s.get(oauth20_authorize,
                              headers={
                                  'user-agent': USER_AGENT,
                                  'host': 'login.live.com'
                              }
         )
-        login_ppft = re.search(R_PPFT, response_two.text).group(1)
-        login_ppsx = re.search(R_PPSX, response_two.text).group(1)
+        ppft = re.search(R_PPFT, response_two.text).group(1)
+        ppsx = re.search(R_PPSX, response_two.text).group(1)
         urlpost = re.search(R_URLPOST, response_two.text).group(1)
 
         response_three = s.post(urlpost,
                                 data={
-                                    'PPFT': login_ppft,
+                                    'PPFT': ppft,
                                     'login': self.username,
                                     'passwd': self.password,
                                     'LoginOptions': '3',
                                     'NewUser': '1',
-                                    'PPSX': login_ppsx,
+                                    'PPSX': ppsx,
                                     'type': '11',
                                     'i3': random.randrange(5000, 10000),
                                     'm1': '1920',
@@ -66,7 +69,7 @@ class HaloFour():
                                 },
                                 headers={
                                     'user-agent': USER_AGENT,
-                                    'referer': login_live_com,
+                                    'referer': oauth20_authorize,
                                     'host': 'login.live.com',
                                     'origin': 'https://login.live.com'
                                 },
@@ -78,7 +81,7 @@ class HaloFour():
         response_four = s.get(callback_url,
                               headers={
                                   'user-agent': USER_AGENT,
-                                  'referer': login_live_com,
+                                  'referer': oauth20_authorize,
                                   'host': 'www.halowaypoint.com'
                               },
                               verify=False,
@@ -89,17 +92,24 @@ class HaloFour():
         response_five = s.get(spartantoken_url,
                               headers={
                                   'user-agent': USER_AGENT,
-                                  'referer': login_live_com,
+                                  'referer': oauth20_authorize,
                                   'host': 'app.halowaypoint.com'
                               },
                               verify=False
         )
-        j = json.loads(response_five.text)
+        j = response_five.json()
 
-        return self.WaypointToken(j['SpartanToken'], j['Gamertag'], j['AnalyticsToken'])
+        return self.HaloWaypointToken(j['SpartanToken'],
+                                      j['Gamertag'],
+                                      j['AnalyticsToken'],
+                                      self.username,
+                                      self.password
+        )
 
-    class WaypointToken:
-        def __init__(self, spartan_token, gamertag, analytics_token):
+    class HaloWaypointToken:
+        def __init__(self, spartan_token, gamertag, analytics_token, live_username, live_password):
             self.spartan_token = spartan_token
             self.gamertag = gamertag
             self.analytics_token = analytics_token
+            self.live_username = live_username
+            self.live_password = live_password
