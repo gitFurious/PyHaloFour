@@ -42,7 +42,7 @@ class HaloFour():
 
     def get_multiple_playercards(self, params):
         url = "https://stats.svc.halowaypoint.com/en-US/h4/playercards"
-        return self._fetch_json(url)
+        return self._fetch_json(url, params)
 
     def get_service_record(self, gamertag):
         url = "https://stats.svc.halowaypoint.com/en-US/players/%s/h4/servicerecord" % gamertag
