@@ -1,7 +1,7 @@
 PyHalo
 ======
 
-A simple wrapper for HaloWaypoint's Halo 4 API written in Python.
+A simple wrapper for HaloWaypoint's Halo 4 API, written in Python.
 
 ## Features
 
